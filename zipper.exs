@@ -133,7 +133,8 @@ defmodule Zipper do
   @spec set_value(Z.t, any) :: Z.t
   def set_value(z, v) do
     {direction, node, trail, bt} = z
-    recursive_change(%{value: v}, node, z, direction, bt)
+    new_node = replace(node, :value, v)
+    recursive_change(%{direction => new_node}, node, z, elem(trail, 0), bt)
   end
   
   @doc """
