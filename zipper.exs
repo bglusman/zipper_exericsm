@@ -49,7 +49,9 @@ defmodule Zipper do
     end
   end
 
-  def follow(tree, trail)
+  def follow(trail) do
+    #hmmm...
+  end
 
   @doc """
   Get the left child of the focus node, if any.
@@ -112,12 +114,26 @@ defmodule Zipper do
     end
   end
 
+  defp replace(map, symbol, value) do
+    Map.merge(map, %{symbol => value})
+  end
+
+  defp recursive_change(new_node, node, :top, symbol, bt) do
+    replace( bt, symbol, new_node)
+  end
+
+  defp recursive_change(new_node, node, {direction, parent_node, bt, old_trail}, symbol, bt) do
+    replace(node, symbol, new_node)
+    |> recursive_change(parent_node, old_trail, direction, bt)
+  end
+
   @doc """
   Set the value of the focus node.
   """
   @spec set_value(Z.t, any) :: Z.t
   def set_value(z, v) do
-
+    {direction, node, trail, bt} = z
+    recursive_change(%{value: v}, node, z, direction, bt)
   end
   
   @doc """
