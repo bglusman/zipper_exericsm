@@ -14,13 +14,17 @@ defmodule Zipper do
   @doc """
   Get a zipper focused on the root node.
   """
+  # @type trail :: { :left, any, BinTree.t, trail }
+  # | { :right, any, BinTree.t, trail }
+  # | :top
+
   @spec from_tree(BT.t) :: Z.t
   def from_tree(bt) do
     # %{tree: bt}
     # |> &Map.merge(if Map.has_key?(bt, :left), do: %{left: bt.left}, else: %{})
     # |> &Map.merge(if Map.has_key?(bt, :right), do: %{right: bt.right}, else: %{})
     # |> &Map.merge(if Map.has_key?(bt, :value), do: %{value: bt.value}, else: %{})
-    bt
+    {:top, bt}
   end
 
   @doc """
@@ -28,7 +32,8 @@ defmodule Zipper do
   """
   @spec to_tree(Z.t) :: BT.t
   def to_tree(z) do
-    z
+    {_, tree} = z
+    tree
   end
 
   @doc """
@@ -36,33 +41,75 @@ defmodule Zipper do
   """
   @spec value(Z.t) :: any
   def value(z) do
-   z.value 
+    case z do
+      {:top, tree} ->
+        tree.value
+      {{_,node,_,_}, _} ->
+        node.value
+    end
   end
+
+  def follow(tree, trail)
 
   @doc """
   Get the left child of the focus node, if any.
   """
   @spec left(Z.t) :: Z.t | nil
-  def left(z) do
-    #%(left: z.left, up: z)
-    z.left
+  def left({:top, bt}) do
+    case bt.left do
+      nil ->
+        nil
+      new_node -> 
+        {{:left, new_node, bt, :top}, bt}
+    end
+  end
+
+  def left({trail, bt}) do
+    {_, node, _, _} = trail
+    case node.left do
+      nil ->
+        nil
+      new_node -> 
+        {{:left, new_node, bt, trail}, bt}
+    end
   end
   
   @doc """
   Get the right child of the focus node, if any.
   """
   @spec right(Z.t) :: Z.t | nil
-  def right(z) do
-    #%(left: z.left, up: z)
-    z.right
+  def right({:top, bt}) do
+    case bt.left do
+      nil ->
+        nil
+      new_node -> 
+        {{:left, new_node, bt, :top}, bt}
+    end
+  end
+
+  def right({trail, bt}) do
+    {_, node, _, _} = trail
+    case node.right do
+      nil ->
+        nil
+      new_node -> 
+        {{:right, new_node, bt, trail}, bt}
+    end
   end
 
   @doc """
   Get the parent of the focus node, if any.
   """
   @spec up(Z.t) :: Z.t
-  def up(z) do
-    
+  def up({trail, bt}) do
+    case trail do
+      :top ->
+        nil
+      {:left, node, bt, old_trail} -> 
+        {old_trail, bt}
+      {:right, node, bt, old_trail} -> 
+        {old_trail, bt}
+    end
   end
 
   @doc """
