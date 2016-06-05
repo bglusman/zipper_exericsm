@@ -13,6 +13,10 @@ require IEx
 
 defmodule Zipper do
   alias BinTree, as: BT
+
+  @type t :: %Zipper{ trail: any, tree: BinTree.t | nil }
+  defstruct trail: nil, tree: nil
+
   @doc """
   Get a zipper focused on the root node.
   """
@@ -22,7 +26,7 @@ defmodule Zipper do
 
 
   @spec from_tree(BT.t) :: Z.t
-  def from_tree(tree), do:  %{tree: tree, trail: :top}
+  def from_tree(tree), do:  %Zipper{tree: tree, trail: :top}
 
   @doc """
   Get the complete tree from a zipper.
@@ -53,8 +57,8 @@ defmodule Zipper do
     case bt.left do
       nil ->
         nil
-      new_node -> 
-        %{trail: {:left, new_node, bt, :top}, tree: bt} 
+      new_node ->
+        %{trail: {:left, new_node, bt, :top}, tree: bt}
     end
   end
 
@@ -63,11 +67,11 @@ defmodule Zipper do
     case node.left do
       nil ->
         nil
-      new_node -> 
-        %{trail: {:left, new_node, bt, trail}, tree: bt} 
+      new_node ->
+        %{trail: {:left, new_node, bt, trail}, tree: bt}
     end
   end
-  
+
   @doc """
   Get the right child of the focus node, if any.
   """
@@ -86,7 +90,7 @@ defmodule Zipper do
     case node.right do
       nil ->
         nil
-      new_node -> 
+      new_node ->
         %{trail: {:right, new_node, bt, trail}, tree: bt}
     end
   end
@@ -99,9 +103,9 @@ defmodule Zipper do
     case trail do
       :top ->
         nil
-      {:left, node, bt, old_trail} -> 
+      {:left, node, bt, old_trail} ->
         %{trail: old_trail, tree: bt}
-      {:right, node, bt, old_trail} -> 
+      {:right, node, bt, old_trail} ->
         %{trail: old_trail, tree: bt}
     end
   end
@@ -139,23 +143,28 @@ defmodule Zipper do
   end
 
   @doc """
-  Replace the left child tree of the focus node. 
+  Replace the left child tree of the focus node.
   """
   @spec set_left(Z.t, BT.t) :: Z.t
-  def set_left(z, l) do
-
+  def set_left(%Zipper{tree: tree} = zipper, leaf) do
+    new_tree = %BinTree{tree | left: leaf}
+    %Zipper{zipper | tree: new_tree}
   end
-  
+
   @doc """
-  Replace the right child tree of the focus node. 
+  Replace the right child tree of the focus node.
   """
   @spec set_right(Z.t, BT.t) :: Z.t
-  def set_right(z, r) do
-
+  def set_right(%Zipper{tree: tree} = zipper, leaf) do
+    new_tree = %BinTree{tree | right: leaf}
+    %Zipper{zipper | tree: new_tree}
   end
-  @type t :: %Zipper{ trail: any, tree: BinTree.t | nil }
-  defstruct trail: nil, tree: nil
 
+  # @type t :: %BinTree{ value: any, left: BinTree.t | nil, right: BinTree.t | nil }
+  # defstruct value: nil, left: nil, right: nil
+
+  # @type t :: %Zipper{ trail: any, tree: BinTree.t | nil }
+  # defstruct trail: nil, tree: nil
 
 end
 
