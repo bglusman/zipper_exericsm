@@ -9,8 +9,10 @@ defmodule BinTree do
   @type t :: %BinTree{ value: any, left: BinTree.t | nil, right: BinTree.t | nil }
   defstruct value: nil, left: nil, right: nil
 end
+require IEx
 
 defmodule Zipper do
+  alias BinTree, as: BT
   @doc """
   Get a zipper focused on the root node.
   """
@@ -18,21 +20,15 @@ defmodule Zipper do
   # | { :right, any, BinTree.t, trail }
   # | :top
 
+
   @spec from_tree(BT.t) :: Z.t
-  def from_tree(bt) do
-    # %{tree: bt}
-    # |> &Map.merge(if Map.has_key?(bt, :left), do: %{left: bt.left}, else: %{})
-    # |> &Map.merge(if Map.has_key?(bt, :right), do: %{right: bt.right}, else: %{})
-    # |> &Map.merge(if Map.has_key?(bt, :value), do: %{value: bt.value}, else: %{})
-    {:top, bt}
-  end
+  def from_tree(tree), do:  %{tree: tree, trail: :top}
 
   @doc """
   Get the complete tree from a zipper.
   """
   @spec to_tree(Z.t) :: BT.t
-  def to_tree(z) do
-    {_, tree} = z
+  def to_tree(%{trail: _, tree: tree}) do
     tree
   end
 
@@ -42,37 +38,33 @@ defmodule Zipper do
   @spec value(Z.t) :: any
   def value(z) do
     case z do
-      {:top, tree} ->
+      %{trail: :top, tree: tree} ->
         tree.value
-      {{_,node,_,_}, _} ->
+      %{trail: {_,node,_,_}} ->
         node.value
     end
-  end
-
-  def follow(trail) do
-    #hmmm...
   end
 
   @doc """
   Get the left child of the focus node, if any.
   """
   @spec left(Z.t) :: Z.t | nil
-  def left({:top, bt}) do
+  def left(%{trail: :top, tree: bt}) do
     case bt.left do
       nil ->
         nil
       new_node -> 
-        {{:left, new_node, bt, :top}, bt}
+        %{trail: {:left, new_node, bt, :top}, tree: bt} 
     end
   end
 
-  def left({trail, bt}) do
+  def left(%{trail: trail, tree: bt}) do
     {_, node, _, _} = trail
     case node.left do
       nil ->
         nil
       new_node -> 
-        {{:left, new_node, bt, trail}, bt}
+        %{trail: {:left, new_node, bt, trail}, tree: bt} 
     end
   end
   
@@ -80,22 +72,22 @@ defmodule Zipper do
   Get the right child of the focus node, if any.
   """
   @spec right(Z.t) :: Z.t | nil
-  def right({:top, bt}) do
+  def right(%{trail: :top, tree: bt}) do
     case bt.left do
       nil ->
         nil
-      new_node -> 
-        {{:left, new_node, bt, :top}, bt}
+      new_node ->
+        %{trail: {:left, new_node, bt, :top}, tree: bt}
     end
   end
 
-  def right({trail, bt}) do
+  def right(%{trail: trail, tree: bt}) do
     {_, node, _, _} = trail
     case node.right do
       nil ->
         nil
       new_node -> 
-        {{:right, new_node, bt, trail}, bt}
+        %{trail: {:right, new_node, bt, trail}, tree: bt}
     end
   end
 
@@ -103,40 +95,49 @@ defmodule Zipper do
   Get the parent of the focus node, if any.
   """
   @spec up(Z.t) :: Z.t
-  def up({trail, bt}) do
+  def up(%{trail: trail, tree: bt}) do
     case trail do
       :top ->
         nil
       {:left, node, bt, old_trail} -> 
-        {old_trail, bt}
+        %{trail: old_trail, tree: bt}
       {:right, node, bt, old_trail} -> 
-        {old_trail, bt}
+        %{trail: old_trail, tree: bt}
     end
   end
 
   defp replace(map, symbol, value) do
-    Map.merge(map, %{symbol => value})
+    Map.put(map, symbol, value)
   end
 
   defp recursive_change(new_node, node, :top, symbol, bt) do
-    replace( bt, symbol, new_node)
+    replace(bt, symbol, new_node)
   end
 
-  defp recursive_change(new_node, node, {direction, parent_node, bt, old_trail}, symbol, bt) do
+
+  defp recursive_change(new_node, node, {{direction, parent_node, bt, old_trail}, bt}, symbol, bt) do
     replace(node, symbol, new_node)
     |> recursive_change(parent_node, old_trail, direction, bt)
   end
+
+  defp recursive_change(new_node, node, error, symbol, bt), do: IO.inspect "error!!:#{error}"
 
   @doc """
   Set the value of the focus node.
   """
   @spec set_value(Z.t, any) :: Z.t
   def set_value(z, v) do
-    {direction, node, trail, bt} = z
+    %{trail: {direction,node,bt,trail}, tree: bt} = z
     new_node = replace(node, :value, v)
-    recursive_change(%{direction => new_node}, node, z, elem(trail, 0), bt)
+    t_dir = trail_direction(z)
+    new_bt = recursive_change(%{direction => new_node}, node, z, t_dir, bt)
+    %{trail: {direction,node,new_bt,trail}, tree: new_bt}
   end
-  
+
+  def trail_direction(z) do
+    elem(z,0) |> elem(0)
+  end
+
   @doc """
   Replace the left child tree of the focus node. 
   """
@@ -151,5 +152,20 @@ defmodule Zipper do
   @spec set_right(Z.t, BT.t) :: Z.t
   def set_right(z, r) do
 
+  end
+  @type t :: %Zipper{ trail: any, tree: BinTree.t | nil }
+  defstruct trail: nil, tree: nil
+
+
+end
+
+defimpl Inspect, for: Zipper do
+  import Inspect.Algebra
+
+
+  def inspect(%{trail: t, tree: tree}, opts) do
+    concat ["(Zipper:", to_doc(t, opts),
+            ":", (if tree, do: to_doc(tree, opts), else: ""),
+            ")"]
   end
 end
