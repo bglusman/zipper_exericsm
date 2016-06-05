@@ -16,7 +16,7 @@ defmodule Zipper do
 
   @type t :: %Zipper{ trail: any, tree: BinTree.t | nil }
   defstruct trail: nil, tree: nil
-
+  # defstruct direction: nil, tree: nil, parent: nil
   @doc """
   Get a zipper focused on the root node.
   """
@@ -40,11 +40,11 @@ defmodule Zipper do
   Get the value of the focus node.
   """
   @spec value(Z.t) :: any
-  def value(z) do
+  def value(%Zipper{} = z) do
     case z do
-      %{trail: :top, tree: tree} ->
+      %Zipper{trail: :top, tree: tree} ->
         tree.value
-      %{trail: {_,node,_,_}} ->
+      %Zipper{trail: {_,node,_,_}} ->
         node.value
     end
   end
@@ -53,22 +53,22 @@ defmodule Zipper do
   Get the left child of the focus node, if any.
   """
   @spec left(Z.t) :: Z.t | nil
-  def left(%{trail: :top, tree: bt}) do
+  def left(%Zipper{trail: :top, tree: bt} = zipper) do
     case bt.left do
       nil ->
         nil
       new_node ->
-        %{trail: {:left, new_node, bt, :top}, tree: bt}
+        %Zipper{trail: {:left, new_node, zipper}, tree: bt}
     end
   end
 
-  def left(%{trail: trail, tree: bt}) do
+  def left(%Zipper{trail: trail, tree: bt} = zipper) do
     {_, node, _, _} = trail
     case node.left do
       nil ->
         nil
       new_node ->
-        %{trail: {:left, new_node, bt, trail}, tree: bt}
+        %Zipper{trail: {:left, new_node, zipper}, tree: bt}
     end
   end
 
@@ -76,22 +76,22 @@ defmodule Zipper do
   Get the right child of the focus node, if any.
   """
   @spec right(Z.t) :: Z.t | nil
-  def right(%{trail: :top, tree: bt}) do
+  def right(%Zipper{trail: :top, tree: bt} = zipper) do
     case bt.left do
       nil ->
         nil
       new_node ->
-        %{trail: {:left, new_node, bt, :top}, tree: bt}
+        %Zipper{trail: {:left, new_node, zipper}, tree: bt}
     end
   end
 
-  def right(%{trail: trail, tree: bt}) do
+  def right(%Zipper{trail: trail, tree: bt} = zipper) do
     {_, node, _, _} = trail
     case node.right do
       nil ->
         nil
       new_node ->
-        %{trail: {:right, new_node, bt, trail}, tree: bt}
+        %Zipper{trail: {:right, new_node, zipper}, tree: bt}
     end
   end
 
@@ -99,16 +99,9 @@ defmodule Zipper do
   Get the parent of the focus node, if any.
   """
   @spec up(Z.t) :: Z.t
-  def up(%{trail: trail, tree: bt}) do
-    case trail do
-      :top ->
-        nil
-      {:left, node, bt, old_trail} ->
-        %{trail: old_trail, tree: bt}
-      {:right, node, bt, old_trail} ->
-        %{trail: old_trail, tree: bt}
-    end
-  end
+
+  def up(%Zipper{trail: :top}), do: nil
+  def up(%Zipper{trail: {_, _, parent_zipper}}), do: parent_zipper
 
   defp replace(map, symbol, value) do
     Map.put(map, symbol, value)
@@ -130,13 +123,16 @@ defmodule Zipper do
   Set the value of the focus node.
   """
   @spec set_value(Z.t, any) :: Z.t
-  def set_value(z, v) do
-    %{trail: {direction,node,bt,trail}, tree: bt} = z
-    new_node = replace(node, :value, v)
-    t_dir = trail_direction(z)
-    new_bt = recursive_change(%{direction => new_node}, node, z[:trail], t_dir, bt)
-    %{trail: {direction,node,new_bt,trail}, tree: new_bt}
+  def set_value(%Zipper{tree: tree, trail: :top} = zipper, value) do
+    new_tree = %BinTree{tree | value: value}
+    %Zipper{zipper | tree: new_tree}
   end
+
+  # @type t :: %BinTree{ value: any, left: BinTree.t | nil, right: BinTree.t | nil }
+  # defstruct value: nil, left: nil, right: nil
+
+  # @type t :: %Zipper{ trail: any, tree: BinTree.t | nil }
+  # defstruct trail: nil, tree: nil
 
   def trail_direction(z) do
     z[:trail] |> elem(0)
@@ -146,25 +142,27 @@ defmodule Zipper do
   Replace the left child tree of the focus node.
   """
   @spec set_left(Z.t, BT.t) :: Z.t
-  def set_left(%Zipper{tree: tree} = zipper, leaf) do
+  def set_left(%Zipper{tree: tree, trail: :top} = zipper, leaf) do
     new_tree = %BinTree{tree | left: leaf}
     %Zipper{zipper | tree: new_tree}
+  end
+  def set_left(%Zipper{tree: tree, trail: trail} = zipper, leaf) do
+    new_tree = %BinTree{tree | left: leaf}
+    # case trail do
+    #   {:left, node, parent_tree, parent_trail } ->
+    #     set_left()
+    # end
   end
 
   @doc """
   Replace the right child tree of the focus node.
   """
   @spec set_right(Z.t, BT.t) :: Z.t
-  def set_right(%Zipper{tree: tree} = zipper, leaf) do
+  def set_right(%Zipper{tree: tree, trail: :top} = zipper, leaf) do
     new_tree = %BinTree{tree | right: leaf}
     %Zipper{zipper | tree: new_tree}
   end
 
-  # @type t :: %BinTree{ value: any, left: BinTree.t | nil, right: BinTree.t | nil }
-  # defstruct value: nil, left: nil, right: nil
-
-  # @type t :: %Zipper{ trail: any, tree: BinTree.t | nil }
-  # defstruct trail: nil, tree: nil
 
 end
 

@@ -36,13 +36,13 @@ defmodule ZipperTest do
                     bt(6, leaf(7), leaf(8)))
   def t6, do: bt(1, bt(2, nil,     leaf(5)), leaf(4))
 
-  # test "data is retained" do
-  #   assert (t1 |> from_tree |> to_tree) == t1
-  # end
-  #
-  # test "left, right and value" do
-  #   assert (t1 |> from_tree |> left |> right |> value) == 3
-  # end
+  test "data is retained" do
+    assert (t1 |> from_tree |> to_tree) == t1
+  end
+
+  test "left, right and value" do
+    assert (t1 |> from_tree |> left |> right |> value) == 3
+  end
   #
   # test "dead end" do
   #   assert (t1 |> from_tree |> left |> left) == nil
@@ -67,11 +67,19 @@ defmodule ZipperTest do
     assert new_tree == bt(99, nil, nil)
   end
 
-  test "simple right value" do
+  test "simple left value" do
     tree = bt(1, nil, nil)
     new_tree = tree |> from_tree |> set_left(leaf(99)) |> to_tree
 
     assert new_tree == bt(1, leaf(99), nil)
+    assert (new_tree |> from_tree |> left |> value) == 99
+  end
+
+  test "recursive set left value" do
+    tree = bt(1, leaf(99), nil)
+    new_tree = tree |> from_tree |> left |>  set_left(leaf(12)) |> to_tree
+
+    assert new_tree ==  bt(1, bt(99, leaf(12), nil), nil)
   end
 
   # @tag :pending
