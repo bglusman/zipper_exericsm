@@ -18,7 +18,7 @@ defmodule Zipper do
   def left(%Zipper{tree: tree} = zipper) do
     %Zipper{tree: tree.left, path: :left, parent: zipper}
   end
-  
+
   def right(%{tree: %{right: nil}}), do: nil
   def right(%Zipper{tree: tree} = zipper) do
     %Zipper{tree: tree.right, path: :right, parent: zipper}
@@ -37,7 +37,7 @@ defmodule Zipper do
   defp update(%Zipper{tree: tree, path: path, parent: parent} = zipper, key, value) do
     new_tree = Map.put(tree, key, value)
     new_parent = update(parent, path, new_tree)
-    %Zipper{zipper | tree: new_tree, path: :left, parent: new_parent}
+    %Zipper{zipper | tree: new_tree, parent: new_parent}
   end
 
 end
