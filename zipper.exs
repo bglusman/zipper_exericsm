@@ -28,7 +28,6 @@ defmodule Zipper do
   @spec from_tree(BT.t) :: Z.t
   def from_tree(tree) do
     z = %Zipper{tree: tree, trail: :top}
-    IEx.pry
     z
   end
   @doc """
@@ -113,7 +112,12 @@ defmodule Zipper do
   def up(%Zipper{trail: {_, _, parent_zipper}}), do: parent_zipper
 
   defp replace(map, symbol, value) do
-    Map.put(map, symbol, value)
+    case map do
+      nil ->
+        struct(BT, [symbol, value])
+      non_nil ->
+        Map.put(map, symbol, value)
+    end
   end
 
   @doc """
@@ -122,13 +126,13 @@ defmodule Zipper do
   @spec set_value(Z.t, any) :: Z.t
   def set_value(%Zipper{tree: tree, trail: :top} = zipper, value) do
     new_tree =  replace(tree, :value, value)
-    %Zipper{zipper | tree: new_tree}
+    %Zipper{trail: :top, tree: new_tree}
   end
 
   def set_value( %Zipper{trail: {direction, node, parent_zipper}, tree: bt} = z, v) do
     new_node = replace(node, :value, v)
     new_parent_zipper = updated_parent_zipper(z, parent_zipper, new_node)
-    %Zipper{trail: {direction,node, parent_zipper}, tree: bt}
+    %Zipper{trail: {direction, new_node, new_parent_zipper}, tree: new_parent_zipper.tree}
   end
 
   def trail_direction(z) do
@@ -136,7 +140,7 @@ defmodule Zipper do
   end
 
 
-  defp updated_parent_zipper(%Zipper{} = z, %Zipper{} = parent_zipper, %BT{}= new_node ) do
+  defp updated_parent_zipper(%Zipper{} = z, %Zipper{} = parent_zipper, new_node ) do
     case trail_direction(z) do
       :left ->
         set_left(parent_zipper, new_node)
@@ -152,38 +156,47 @@ defmodule Zipper do
   # defstruct trail: nil, tree: nil
 
   def trail_direction(z) do
-    z[:trail] |> elem(0)
+    z.trail |> elem(0)
   end
 
   @doc """
   Replace the left child tree of the focus node.
   """
   @spec set_left(Z.t, BT.t) :: Z.t
-  def set_left(%Zipper{tree: tree, trail: :top} = zipper, %BT{}=node) do
+  def set_left(%Zipper{trail: :top, tree: %BT{} = tree} = zipper,  node) do
     new_tree =  replace(tree, :left, node)
-    %Zipper{zipper | tree: new_tree}
+    %Zipper{trail: :top, tree: new_tree}
   end
 
-  def set_left( %Zipper{trail: {direction, node, parent_zipper}, tree: %BT{} = bt} = z, node) do
+  def set_left( %Zipper{trail: {direction, %BT{} = node, parent_zipper}, tree: %BT{} = bt} = z, node) do
     new_node = replace(node, :left, node)
     new_parent_zipper = updated_parent_zipper(z, parent_zipper, new_node)
-    %Zipper{trail: {direction,node, parent_zipper}, tree: bt}
+    %Zipper{trail: {direction,node, new_parent_zipper}, tree: new_parent_zipper.tree}
+  end
+
+  def set_left(x, y) do
+    IEx.pry
   end
 
   @doc """
   Replace the right child tree of the focus node.
   """
   @spec set_right(Z.t, BT.t) :: Z.t
-  def set_right(%Zipper{tree: tree, trail: :top} = zipper, node) do
+  def set_right(%Zipper{trail: :top, tree: %BT{} = tree} = zipper, node) do
     new_tree =  replace(tree, :right, node)
-    %Zipper{zipper | tree: new_tree}
+    %Zipper{trail: :top, tree: new_tree}
   end
 
-  def set_right( %Zipper{trail: {direction, node, parent_zipper}, tree: bt} = z, %BT{} = node) do
+  def set_right( %Zipper{trail: {direction, %BT{} = node, %Zipper{} = parent_zipper}, tree:%BT{} = bt} = z, node) do
     new_node = replace(node, :right, node)
     new_parent_zipper = updated_parent_zipper(z, parent_zipper, new_node)
-    %Zipper{trail: {direction,node, parent_zipper}, tree: bt}
+    %Zipper{trail: {direction,node, new_parent_zipper}, tree: new_parent_zipper.tree}
   end
+
+  # def set_right(x, y) do
+  #   IEx.pry
+  # end
+
 end
 
 defimpl Inspect, for: Zipper do
