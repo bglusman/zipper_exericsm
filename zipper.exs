@@ -9,10 +9,10 @@ defmodule BinTree do
   @type t :: %BinTree{ value: any, left: BinTree.t | nil, right: BinTree.t | nil }
   defstruct value: nil, left: nil, right: nil
 end
-require IEx
 
 defmodule Zipper do
   alias BinTree, as: BT
+  require IEx
 
   @type t :: %Zipper{ trail: any, tree: BinTree.t | nil }
   defstruct trail: nil, tree: nil
@@ -26,8 +26,11 @@ defmodule Zipper do
 
 
   @spec from_tree(BT.t) :: Z.t
-  def from_tree(tree), do:  %Zipper{tree: tree, trail: :top}
-
+  def from_tree(tree) do
+    z = %Zipper{tree: tree, trail: :top}
+    IEx.pry
+    z
+  end
   @doc """
   Get the complete tree from a zipper.
   """
