@@ -168,14 +168,10 @@ defmodule Zipper do
     %Zipper{trail: :top, tree: new_tree}
   end
 
-  def set_left( %Zipper{trail: {direction, %BT{} = node, parent_zipper}, tree: %BT{} = bt} = z, node) do
-    new_node = replace(node, :left, node)
+  def set_left( %Zipper{trail: {direction, %BT{} = node, %Zipper{} = parent_zipper}, tree: %BT{} = tree} = z, node_value) do
+    new_node = replace(node, :left, node_value)
     new_parent_zipper = updated_parent_zipper(z, parent_zipper, new_node)
     %Zipper{trail: {direction,node, new_parent_zipper}, tree: new_parent_zipper.tree}
-  end
-
-  def set_left(x, y) do
-    IEx.pry
   end
 
   @doc """
@@ -187,15 +183,11 @@ defmodule Zipper do
     %Zipper{trail: :top, tree: new_tree}
   end
 
-  def set_right( %Zipper{trail: {direction, %BT{} = node, %Zipper{} = parent_zipper}, tree:%BT{} = bt} = z, node) do
-    new_node = replace(node, :right, node)
+  def set_right( %Zipper{trail: {direction, %BT{} = node, %Zipper{} = parent_zipper}, tree: %BT{} = tree} = z, node_value) do
+    new_node = replace(node, :right, node_value)
     new_parent_zipper = updated_parent_zipper(z, parent_zipper, new_node)
     %Zipper{trail: {direction,node, new_parent_zipper}, tree: new_parent_zipper.tree}
   end
-
-  # def set_right(x, y) do
-  #   IEx.pry
-  # end
 
 end
 
